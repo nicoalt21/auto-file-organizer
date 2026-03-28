@@ -2,8 +2,10 @@
 ![Python](https://img.shields.io/badge/python-3.x-blue.svg) ![License](https://img.shields.io/badge/license-MIT-green.svg) ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20macos%20%7C%20linux-lightgrey.svg)
 
 An intelligent, event-driven Python utility that monitors your folders and automatically organizes incoming files into categorized subdirectories based on their extensions.
+
 ## Overview
 This tool runs silently in the background and acts as a digital librarian. Unlike basic scripts that scan folders on a timer, this project uses OS-level event monitoring to trigger actions only when a new file is actually created, ensuring 0% idle CPU usage.
+
 ## Key Features
 * **Event-Driven Architecture**: Powered by `watchdog` to intercept File System events instantly.
 * **Zero-UI Background Execution**: Run it as a "daemon" process (`.pyw`) on Windows for invisible operation.
@@ -11,25 +13,37 @@ This tool runs silently in the background and acts as a digital librarian. Unlik
 * **Dynamic Configuration**: Manage your sorting rules via `config.json` without touching the code.
 * **Cross-Platform**: Built using `pathlib` for full compatibility (Windows, macOS, Linux).
 
-## 🛠️ Technical Stack
-
+## Technical Stack
 * Language: Python `3.x`
 * Core Library: `watchdog` (Event monitoring)
 * Architecture: Observer Pattern
 
+---
+
 ## 📥 Installation & Setup
 
 ### Option 1: Quick Start (Recommended)
+1. **Install Python**: Download it from [python.org](https://www.python.org/downloads/). 
+   * **IMPORTANT**: During installation, check the box **"Add Python to PATH"**.
+2. **Download the Project**: Go to the [Releases](https://github.com/nicoalt21/auto-file-organizer/releases) page and download the `.zip`. Extract it to a folder on your PC (e.g., Desktop).
+3. **Install Dependencies**:
+   * Open the extracted folder.
+   * Click on the address bar at the top, type `cmd`, and press **Enter**.
+   * In the black window that appears, paste the following command and press Enter:
+     ```bash
+     pip install -r requirements.txt
+     ```
+   * Once finished, you can close the window.
+4. Follow the **"How to Use"** instructions below.
 
-1. Go to the [Releases](https://github.com/nicoalt21/auto-file-organizer/releases) page.
-2. Download the latest source code (`.zip` or `.tar.gz`).
-3. Extract the files.
-4. Open your terminal in that folder and run:
-   ```bash
-   pip install -r requirements.txt
+### Option 2: Clone for Developers
+```bash
+git clone [https://github.com/nicoalt21/auto-file-organizer.git](https://github.com/nicoalt21/auto-file-organizer.git)
+cd auto-file-organizer
+pip install -r requirements.txt
 5. Follow the "How to Use" instructions below.
 
-### 🛠️ Option 2: Clone for Developers
+### Option 2: Clone for Developers
 
 ```bash
 git clone https://github.com/nicoalt21/auto-file-organizer.git
