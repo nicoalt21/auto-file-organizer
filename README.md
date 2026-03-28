@@ -1,4 +1,4 @@
-# 📂 Smart File Organizer (v1.0.0)
+# 📂 Smart File Organizer (v1.1.0)
 ![Python](https://img.shields.io/badge/python-3.x-blue.svg) ![License](https://img.shields.io/badge/license-MIT-green.svg) ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20macos%20%7C%20linux-lightgrey.svg)
 
 An intelligent, event-driven Python utility that monitors your folders and automatically organizes incoming files into categorized subdirectories based on their extensions.
@@ -12,6 +12,7 @@ This tool runs silently in the background and acts as a digital librarian. Unlik
 * **Smart Conflict Handling**: Includes a 1-second safety delay to ensure files are fully downloaded before moving.
 * **Dynamic Configuration**: Manage your sorting rules via `config.json` without touching the code.
 * **Cross-Platform**: Built using `pathlib` for full compatibility (Windows, macOS, Linux).
+* **Auto-Renaming (Anti-Duplicates)**: If a downloaded file already exists, it intelligently renames it (e.g., `file_1.pdf`) to prevent data loss.
 
 ## Technical Stack
 * Language: Python `3.x`
