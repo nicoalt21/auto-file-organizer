@@ -74,3 +74,34 @@ To make the organizer run automatically every time you turn on your PC:
 
 ---
 *Developed as a portfolio project to demonstrate Python automation and system-level programming.*
+
+---
+
+## 🇮🇹 Istruzioni in Italiano (Guida Rapida)
+
+Questo strumento serve a tenere pulita la cartella "Download" spostando automaticamente i file nelle cartelle giuste (Immagini, Documenti, ecc.) non appena vengono scaricati.
+
+### 📥 Come installarlo (Passo dopo passo)
+
+1. **Installa Python**: Scaricalo da [python.org](https://www.python.org/downloads/). 
+   * **IMPORTANTE**: Durante l'installazione, spunta la casella **"Add Python to PATH"**.
+2. **Scarica il progetto**: Vai nella sezione [Releases](https://github.com/nicoalt21/auto-file-organizer/releases) e scarica lo ZIP. Estrai il contenuto in una cartella sul tuo PC (es. sul Desktop).
+3. **Installa i componenti**: 
+   * Entra nella cartella estratta.
+   * Clicca sulla barra degli indirizzi in alto (dove vedi il percorso della cartella), scrivi `cmd` e premi **Invio**.
+   * Nella finestra nera che appare, incolla questo comando e premi Invio:
+     ```bash
+     pip install -r requirements.txt
+     ```
+   * Quando ha finito, puoi chiudere la finestra.
+
+### 🚀 Come usarlo
+
+* **Per testarlo**: Nella stessa cartella, scrivi `cmd` nella barra in alto e digita `python organizer.py`. Vedrai i messaggi ogni volta che un file viene spostato.
+* **Per l'uso quotidiano**: Rinomina il file `organizer.py` in `organizer.pyw`. Facendo doppio clic su di esso, il programma partirà "invisibile" e lavorerà in sottofondo senza disturbarti.
+
+### ⚙️ Personalizzazione
+Puoi cambiare i nomi delle cartelle o aggiungere nuove estensioni modificando il file `config.json` con un semplice editor di testo (come il Blocco Note).
+
+---
+*Progetto realizzato per dimostrare competenze di automazione e programmazione di sistema.*
