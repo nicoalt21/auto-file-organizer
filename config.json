@@ -1,0 +1,6 @@
+{
+  "Immagini": [".jpg", ".jpeg", ".png", ".gif"],
+  "Documenti": [".pdf", ".docx", ".txt", ".xlsx"],
+  "Programmi": [".exe", ".msi", ".dmg"],
+  "Archivi": [".zip", ".rar", ".7z"]
+}
