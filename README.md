@@ -21,7 +21,11 @@ This tool runs silently in the background and acts as a digital librarian. Unlik
 
 1. Go to the [Releases](https://github.com/nicoalt21/auto-file-organizer/releases) page.
 2. Download the latest source code (`.zip` or `.tar.gz`).
-3. Extract the files and follow the instructions below.
+3. Extract the files.
+4. Open your terminal in that folder and run:
+   ```bash
+   pip install -r requirements.txt
+5. Follow the "How to Use" instructions below.
 
 ### 🛠️ Option 2: Clone for Developers
 
