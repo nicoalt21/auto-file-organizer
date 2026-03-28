@@ -52,12 +52,17 @@ class GestoreDownload(FileSystemEventHandler):
 
         destinazione_finale = cartella_destinazione / percorso_file.name
 
+        contatore = 1
+        while destinazione_finale.exists():
+            nuovo_nome = f"{percorso_file.stem}_{contatore}{percorso_file.suffix}"
+            destinazione_finale = cartella_destinazione / nuovo_nome
+            contatore += 1
+
         time.sleep(1)
 
         try:
-            if not destinazione_finale.exists():
-                shutil.move(str(percorso_file), str(destinazione_finale))
-                print(f"Spostato: {percorso_file.name} -> {nome_cartella}")
+            shutil.move(str(percorso_file), str(destinazione_finale))
+            print(f"Spostato: {destinazione_finale.name} -> {nome_cartella}")
         except PermissionError:
             pass
         except Exception as e:
