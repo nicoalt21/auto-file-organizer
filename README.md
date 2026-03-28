@@ -1,4 +1,6 @@
 # 📂 Smart File Organizer (v1.0.0)
+![Python](https://img.shields.io/badge/python-3.x-blue.svg) ![License](https://img.shields.io/badge/license-MIT-green.svg) ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20macos%20%7C%20linux-lightgrey.svg)
+
 An intelligent, event-driven Python utility that monitors your folders and automatically organizes incoming files into categorized subdirectories based on their extensions.
 ## Overview
 This tool runs silently in the background and acts as a digital librarian. Unlike basic scripts that scan folders on a timer, this project uses OS-level event monitoring to trigger actions only when a new file is actually created, ensuring 0% idle CPU usage.
@@ -44,10 +46,13 @@ Edit the config.json file to define your categories and extensions:
 
 ```json
 {
-  "Images": [".jpg", ".png", ".jpeg"],
-  "Documents": [".pdf", ".docx", ".txt"],
-  "Archives": [".zip", ".rar"],
-  "Programs": [".exe", ".msi"]
+  "Immagini": [".jpg", ".png", ".jpeg", ".gif", ".svg", ".webp"],
+  "Documenti": [".pdf", ".docx", ".txt", ".xlsx", ".pptx", ".csv"],
+  "Archivi": [".zip", ".rar", ".7z", ".tar", ".gz"],
+  "Installatori": [".exe", ".msi", ".dmg", ".iso"],
+  "Video": [".mp4", ".mov", ".avi", ".mkv", ".wmv"],
+  "Musica": [".mp3", ".wav", ".flac", ".ogg", ".m4a"],
+  "Codice": [".py", ".html", ".css", ".js", ".cpp", ".json"]
 }
 ```
 ### 2. Run the Organizer
@@ -60,6 +65,12 @@ Edit the config.json file to define your categories and extensions:
 To stop the background process on Windows:
 1. Open Task Manager (CTRL+SHIFT+ESC).
 2. Find and Kill the `pythonw.exe` process associated with the script.
+
+## Bonus: Autostart on Windows
+To make the organizer run automatically every time you turn on your PC:
+1. Press `Win + R`, type `shell:startup`, and hit Enter.
+2. Create a shortcut of your `organizer.pyw` (or a `.bat` file) in that folder.
+3. That's it! The script will now work silently in the background from boot.
 
 ---
 *Developed as a portfolio project to demonstrate Python automation and system-level programming.*
