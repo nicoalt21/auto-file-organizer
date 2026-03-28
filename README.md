@@ -1,7 +1,7 @@
 # 📂 Smart File Organizer (v1.0.0)
 An intelligent, event-driven Python utility that monitors your folders and automatically organizes incoming files into categorized subdirectories based on their extensions.
 ## Overview
-Tired of a cluttered "Downloads" folder? This tool runs silently in the background and acts as a digital librarian. Unlike basic scripts that scan folders on a timer, this project uses OS-level event monitoring to trigger actions only when a new file is actually created, ensuring 0% idle CPU usage.
+This tool runs silently in the background and acts as a digital librarian. Unlike basic scripts that scan folders on a timer, this project uses OS-level event monitoring to trigger actions only when a new file is actually created, ensuring 0% idle CPU usage.
 ## Key Features
 * **Event-Driven Architecture**: Powered by `watchdog` to intercept File System events instantly.
 * **Zero-UI Background Execution**: Run it as a "daemon" process (`.pyw`) on Windows for invisible operation.
