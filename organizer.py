@@ -1,3 +1,4 @@
+import sys
 import json
 import time
 import shutil
@@ -7,7 +8,12 @@ from watchdog.events import FileSystemEventHandler
 
 
 def carica_regole():
-    cartella_script = Path(__file__).parent
+    # Permette al file config.json di essere trovato anche quando creiamo l'EXE
+    if getattr(sys, 'frozen', False):
+        cartella_script = Path(sys.executable).parent
+    else:
+        cartella_script = Path(__file__).parent
+
     percorso_file = cartella_script / "config.json"
 
     try:
@@ -27,9 +33,10 @@ def trova_cartella_download():
 
 class GestoreDownload(FileSystemEventHandler):
 
-    def __init__(self, cartella_base, regole):
+    def __init__(self, cartella_base, regole, log_callback=None):
         self.cartella_base = cartella_base
         self.regole = regole
+        self.log_callback = log_callback
 
     def on_modified(self, event):
         if event.is_directory:
@@ -52,6 +59,7 @@ class GestoreDownload(FileSystemEventHandler):
 
         destinazione_finale = cartella_destinazione / percorso_file.name
 
+        # Logica Anti-Duplicati
         contatore = 1
         while destinazione_finale.exists():
             nuovo_nome = f"{percorso_file.stem}_{contatore}{percorso_file.suffix}"
@@ -62,11 +70,20 @@ class GestoreDownload(FileSystemEventHandler):
 
         try:
             shutil.move(str(percorso_file), str(destinazione_finale))
-            print(f"Spostato: {destinazione_finale.name} -> {nome_cartella}")
+            messaggio = f"Spostato: {destinazione_finale.name} -> {nome_cartella}"
+            print(messaggio)
+
+            # Se la GUI è connessa, invia il messaggio al log visivo
+            if self.log_callback:
+                self.log_callback(messaggio)
+
         except PermissionError:
             pass
         except Exception as e:
-            print(f"Errore imprevisto con {percorso_file.name}: {e}")
+            errore = f"Errore imprevisto con {percorso_file.name}: {e}"
+            print(errore)
+            if self.log_callback:
+                self.log_callback(errore)
 
 
 if __name__ == "__main__":
@@ -80,7 +97,6 @@ if __name__ == "__main__":
         gestore_eventi = GestoreDownload(cartella_download, regole)
         observer = Observer()
         observer.schedule(gestore_eventi, str(cartella_download), recursive=False)
-
         observer.start()
 
         try:
