@@ -41,20 +41,20 @@ auto-file-organizer/
 ### Architettura
 ```
 gui.py  ──────────────────────────────────────────────────────────────────────────────────────┐
-│                                                                                              │
-│  CTk UI Loop (main thread)                                                                   │
-│  ├── Switch: Notifiche / Tray / Avvio Windows                                                │
-│  ├── Badge Editor  ──► legge/scrive config.json                                              │
+│                                                                                             │
+│  CTk UI Loop (main thread)                                                                  │
+│  ├── Switch: Notifiche / Tray / Avvio Windows                                               │
+│  ├── Badge Editor  ──► legge/scrive config.json                                             │
 │  └── Bottoni Avvia/Ferma/Riavvia  ──► controlla Observer                                    │
-│                                                                                              │
-│  watchdog.Observer (thread secondario)                                                        │
-│  └── GestoreDownload (FileSystemEventHandler)  ──► on_modified()                             │
-│       ├── Filtra estensioni temporanee (.crdownload, .tmp, .part)                             │
-│       ├── Cerca cartella di destinazione in config.json                                       │
-│       └── sposta_file()  ──► anti-duplicati + shutil.move()                                  │
-│                                                                                               │
-│  pystray.Icon (thread daemon)  ─── attivo solo quando la finestra è nascosta                  │
-└───────────────────────────────────────────────────────────────────────────────────────────────┘
+│                                                                                             │
+│  watchdog.Observer (thread secondario)                                                      │
+│  └── GestoreDownload (FileSystemEventHandler)  ──► on_modified()                            │
+│       ├── Filtra estensioni temporanee (.crdownload, .tmp, .part)                           │
+│       ├── Cerca cartella di destinazione in config.json                                     │
+│       └── sposta_file()  ──► anti-duplicati + shutil.move()                                 │
+│                                                                                             │
+│  pystray.Icon (thread daemon)  ─── attivo solo quando la finestra è nascosta                │
+└─────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Flusso di uno spostamento
