@@ -1,2 +1,5 @@
-watchdog
 customtkinter
+watchdog
+plyer
+pystray
+Pillow
