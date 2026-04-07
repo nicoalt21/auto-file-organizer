@@ -10,7 +10,6 @@ import threading
 import json
 from pathlib import Path
 
-# Nuove librerie per Notifiche e System Tray
 from plyer import notification
 import pystray
 from PIL import Image, ImageDraw
@@ -24,7 +23,7 @@ if SISTEMA_OPERATIVO == 'Windows':
 mio_observer = None
 file_spostati = 0
 
-# Trova i percorsi corretti
+# Trova i percorsi corretti (compatibile con PyInstaller)
 if getattr(sys, 'frozen', False):
     cartella_script = Path(sys.executable).parent
 else:
@@ -46,8 +45,8 @@ def carica_impostazioni():
         try:
             with open(percorso_settings, "r") as f:
                 return json.load(f)
-        except:
-            pass
+        except (json.JSONDecodeError, KeyError) as e:
+            print(f"Impostazioni corrotte, uso default: {e}")
     return impostazioni_default.copy()
 
 
@@ -73,10 +72,14 @@ def salva_impostazioni(*args):
 
 # --- FUNZIONI DI WINDOWS ---
 def controlla_stato_avvio():
-    if SISTEMA_OPERATIVO != 'Windows': return False
+    if SISTEMA_OPERATIVO != 'Windows':
+        return False
     try:
-        chiave = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0,
-                                winreg.KEY_READ)
+        chiave = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Run",
+            0, winreg.KEY_READ
+        )
         winreg.QueryValueEx(chiave, "SmartFileOrganizer")
         winreg.CloseKey(chiave)
         return True
@@ -85,18 +88,21 @@ def controlla_stato_avvio():
 
 
 def imposta_avvio_windows():
-    if SISTEMA_OPERATIVO != 'Windows': return
+    if SISTEMA_OPERATIVO != 'Windows':
+        return
     attiva = switch_avvio_var.get()
 
-    # FIX: Metodo più sicuro per avviare lo script o l'exe
     if getattr(sys, 'frozen', False):
         comando = f'"{sys.executable}"'
     else:
         comando = f'"{sys.executable}" "{os.path.abspath(__file__)}"'
 
     try:
-        chiave = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0,
-                                winreg.KEY_SET_VALUE)
+        chiave = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Run",
+            0, winreg.KEY_SET_VALUE
+        )
         if attiva:
             winreg.SetValueEx(chiave, "SmartFileOrganizer", 0, winreg.REG_SZ, comando)
             aggiungi_log("Avvio con Windows: ATTIVATO")
@@ -147,8 +153,11 @@ def apri_impostazioni():
     finestra_regole.geometry("700x500")
     finestra_regole.attributes("-topmost", True)
 
-    label_info = ctk.CTkLabel(finestra_regole, text="Organizza le tue cartelle e le estensioni:",
-                              font=("Helvetica", 14, "bold"))
+    label_info = ctk.CTkLabel(
+        finestra_regole,
+        text="Organizza le tue cartelle e le estensioni:",
+        font=("Helvetica", 14, "bold")
+    )
     label_info.pack(pady=(10, 5))
 
     frame_scroll = ctk.CTkScrollableFrame(finestra_regole, width=650, height=350)
@@ -157,7 +166,8 @@ def apri_impostazioni():
     righe_regole = []
 
     def aggiungi_riga_ui(nome_cartella="", estensioni_list=None):
-        if estensioni_list is None: estensioni_list = []
+        if estensioni_list is None:
+            estensioni_list = []
 
         riga = ctk.CTkFrame(frame_scroll, fg_color="#2b2b2b", corner_radius=10)
         riga.pack(fill="x", pady=8, padx=5, ipadx=5, ipady=5)
@@ -165,13 +175,29 @@ def apri_impostazioni():
         frame_top = ctk.CTkFrame(riga, fg_color="transparent")
         frame_top.pack(fill="x", pady=(0, 5))
 
-        entry_nome = ctk.CTkEntry(frame_top, width=200, placeholder_text="Nome Cartella (es. Immagini)",
-                                  font=("Helvetica", 14, "bold"))
+        entry_nome = ctk.CTkEntry(
+            frame_top, width=200,
+            placeholder_text="Nome Cartella (es. Immagini)",
+            font=("Helvetica", 14, "bold")
+        )
         entry_nome.insert(0, nome_cartella)
         entry_nome.pack(side="left")
 
-        btn_elimina_riga = ctk.CTkButton(frame_top, text="Elimina Cartella", width=100, fg_color="#8b0000",
-                                         hover_color="#5a0000", command=riga.destroy)
+        # Dati riga registrati prima del callback di eliminazione
+        dati_riga = {"nome": entry_nome, "estensioni_list": [], "frame": riga}
+        righe_regole.append(dati_riga)
+
+        def elimina_riga():
+            riga.destroy()
+            # FIX: rimuove anche i dati dalla lista per evitare righe zombie
+            if dati_riga in righe_regole:
+                righe_regole.remove(dati_riga)
+
+        btn_elimina_riga = ctk.CTkButton(
+            frame_top, text="Elimina Cartella", width=100,
+            fg_color="#8b0000", hover_color="#5a0000",
+            command=elimina_riga
+        )
         btn_elimina_riga.pack(side="right")
 
         frame_bot = ctk.CTkFrame(riga, fg_color="transparent")
@@ -180,15 +206,16 @@ def apri_impostazioni():
         frame_badges = ctk.CTkFrame(frame_bot, fg_color="transparent")
         frame_badges.pack(side="left", fill="x", expand=True)
 
-        lista_estensioni_salvate = []
-
         def aggiungi_badge(ext_str):
             ext_str = ext_str.strip().lower()
-            if not ext_str: return
-            if not ext_str.startswith('.'): ext_str = '.' + ext_str
+            if not ext_str:
+                return
+            if not ext_str.startswith('.'):
+                ext_str = '.' + ext_str
+            if ext_str in dati_riga["estensioni_list"]:
+                return
 
-            if ext_str in lista_estensioni_salvate: return
-            lista_estensioni_salvate.append(ext_str)
+            dati_riga["estensioni_list"].append(ext_str)
 
             badge = ctk.CTkFrame(frame_badges, fg_color="#1f538d", corner_radius=15)
             badge.pack(side="left", padx=3, pady=2)
@@ -198,10 +225,14 @@ def apri_impostazioni():
 
             def rimuovi_badge():
                 badge.destroy()
-                lista_estensioni_salvate.remove(ext_str)
+                if ext_str in dati_riga["estensioni_list"]:
+                    dati_riga["estensioni_list"].remove(ext_str)
 
-            btn_x = ctk.CTkButton(badge, text="x", width=20, height=20, fg_color="transparent", hover_color="red",
-                                  text_color="white", command=rimuovi_badge)
+            btn_x = ctk.CTkButton(
+                badge, text="x", width=20, height=20,
+                fg_color="transparent", hover_color="red",
+                text_color="white", command=rimuovi_badge
+            )
             btn_x.pack(side="left", padx=(0, 5))
 
         for ext in estensioni_list:
@@ -219,9 +250,6 @@ def apri_impostazioni():
         btn_add_ext = ctk.CTkButton(frame_bot, text="+ Aggiungi", width=80, command=on_add)
         btn_add_ext.pack(side="left")
 
-        dati_riga = {"nome": entry_nome, "estensioni_list": lista_estensioni_salvate, "frame": riga}
-        righe_regole.append(dati_riga)
-
     try:
         with open(percorso_config, "r") as file:
             regole_attuali = json.load(file)
@@ -229,22 +257,21 @@ def apri_impostazioni():
                 aggiungi_riga_ui(cartella, estensioni)
     except FileNotFoundError:
         aggiungi_riga_ui()
+    except json.JSONDecodeError as e:
+        aggiungi_log(f"Errore lettura config.json: {e}")
 
-    btn_aggiungi_riga = ctk.CTkButton(finestra_regole, text="+ Aggiungi Nuova Cartella", fg_color="#444444",
-                                      hover_color="#222222", command=aggiungi_riga_ui)
+    btn_aggiungi_riga = ctk.CTkButton(
+        finestra_regole, text="+ Aggiungi Nuova Cartella",
+        fg_color="#444444", hover_color="#222222",
+        command=aggiungi_riga_ui
+    )
     btn_aggiungi_riga.pack(pady=5)
 
     def salva_tutto():
         nuove_regole = {}
         for dati in righe_regole:
-            try:
-                if not dati["frame"].winfo_exists(): continue
-            except:
-                continue
-
             nome = dati["nome"].get().strip()
             ext_list = dati["estensioni_list"]
-
             if nome and ext_list:
                 nuove_regole[nome] = ext_list
 
@@ -256,8 +283,11 @@ def apri_impostazioni():
         except Exception as e:
             aggiungi_log(f"Errore salvataggio: {e}")
 
-    btn_salva = ctk.CTkButton(finestra_regole, text="Salva Impostazioni", fg_color="green", hover_color="darkgreen",
-                              command=salva_tutto)
+    btn_salva = ctk.CTkButton(
+        finestra_regole, text="Salva Impostazioni",
+        fg_color="green", hover_color="darkgreen",
+        command=salva_tutto
+    )
     btn_salva.pack(pady=10)
 
 
@@ -286,6 +316,15 @@ def apri_cartella_selezionata():
 
 
 def evento_spostamento(messaggio):
+    """
+    Callback chiamato dal thread watchdog.
+    FIX: usa app.after() per aggiornare la GUI in modo thread-safe.
+    """
+    app.after(0, lambda: _aggiorna_gui_spostamento(messaggio))
+
+
+def _aggiorna_gui_spostamento(messaggio):
+    """Aggiornamento GUI eseguito nel main thread."""
     global file_spostati
     if "Spostato" in messaggio:
         file_spostati += 1
@@ -293,7 +332,12 @@ def evento_spostamento(messaggio):
 
         if switch_notifiche_var.get():
             try:
-                notification.notify(title="File Organizzato", message=messaggio, app_name="Smart Organizer", timeout=3)
+                notification.notify(
+                    title="File Organizzato",
+                    message=messaggio,
+                    app_name="Smart Organizer",
+                    timeout=3
+                )
             except Exception:
                 pass
 
@@ -303,7 +347,8 @@ def evento_spostamento(messaggio):
 
 def avvia_organizer():
     global mio_observer
-    if mio_observer is not None and mio_observer.is_alive(): return
+    if mio_observer is not None and mio_observer.is_alive():
+        return
 
     regole = organizer.carica_regole()
     if regole and cartella_selezionata.exists():
@@ -318,7 +363,7 @@ def avvia_organizer():
         btn_riavvia.configure(state="normal")
         aggiungi_log(f"[{time.strftime('%H:%M:%S')}] Organizer avviato.")
     else:
-        aggiungi_log("Errore: Impossibile caricare regole.")
+        aggiungi_log("Errore: Impossibile caricare regole o cartella non trovata.")
 
 
 def ferma_organizer():
@@ -376,8 +421,11 @@ stato_label.pack(pady=(0, 5))
 lbl_cartella = ctk.CTkLabel(app, text=f"Cartella: {cartella_selezionata.name}", font=("Helvetica", 12))
 lbl_cartella.pack(pady=(0, 5))
 
-btn_apri_cartella = ctk.CTkButton(app, text="Apri Cartella", width=120, height=24, fg_color="#444444",
-                                  hover_color="#222222", command=apri_cartella_selezionata)
+btn_apri_cartella = ctk.CTkButton(
+    app, text="Apri Cartella", width=120, height=24,
+    fg_color="#444444", hover_color="#222222",
+    command=apri_cartella_selezionata
+)
 btn_apri_cartella.pack(pady=(0, 15))
 
 # --- ZONA INTERRUTTORI OPZIONI ---
@@ -385,24 +433,30 @@ frame_opzioni = ctk.CTkFrame(app, fg_color="transparent")
 frame_opzioni.pack(pady=5)
 
 switch_notifiche_var = ctk.BooleanVar(value=impostazioni_attuali.get("notifiche_attive", True))
-switch_notifiche = ctk.CTkSwitch(frame_opzioni, text="Notifiche Desktop", variable=switch_notifiche_var,
-                                 command=salva_impostazioni)
+switch_notifiche = ctk.CTkSwitch(
+    frame_opzioni, text="Notifiche Desktop",
+    variable=switch_notifiche_var, command=salva_impostazioni
+)
 switch_notifiche.grid(row=0, column=0, padx=15, pady=5)
 
 switch_tray_var = ctk.BooleanVar(value=impostazioni_attuali.get("tray_attiva", True))
-switch_tray = ctk.CTkSwitch(frame_opzioni, text="Minimizza in Tray", variable=switch_tray_var,
-                            command=salva_impostazioni)
+switch_tray = ctk.CTkSwitch(
+    frame_opzioni, text="Minimizza in Tray",
+    variable=switch_tray_var, command=salva_impostazioni
+)
 switch_tray.grid(row=0, column=1, padx=15, pady=5)
 
-# FIX: Disattiva la tray se siamo su Mac
+# Disattiva la tray su macOS
 if SISTEMA_OPERATIVO == 'Darwin':
     switch_tray_var.set(False)
     switch_tray.configure(state="disabled", text="Tray (Non supp. su Mac)")
 
 if SISTEMA_OPERATIVO == 'Windows':
     switch_avvio_var = ctk.BooleanVar(value=controlla_stato_avvio())
-    switch_avvio = ctk.CTkSwitch(frame_opzioni, text="Avvia con Windows", command=imposta_avvio_windows,
-                                 variable=switch_avvio_var)
+    switch_avvio = ctk.CTkSwitch(
+        frame_opzioni, text="Avvia con Windows",
+        command=imposta_avvio_windows, variable=switch_avvio_var
+    )
     switch_avvio.grid(row=1, column=0, columnspan=2, pady=10)
 
 # --- ZONA BOTTONI PRINCIPALI ---
@@ -412,29 +466,42 @@ frame_bottoni.pack(pady=5)
 btn_scegli = ctk.CTkButton(frame_bottoni, text="Scegli Cartella", width=140, command=scegli_cartella)
 btn_scegli.grid(row=0, column=0, padx=5)
 
-btn_impostazioni = ctk.CTkButton(frame_bottoni, text="Modifica Regole", width=140, fg_color="#555555",
-                                 hover_color="#333333", command=apri_impostazioni)
+btn_impostazioni = ctk.CTkButton(
+    frame_bottoni, text="Modifica Regole", width=140,
+    fg_color="#555555", hover_color="#333333",
+    command=apri_impostazioni
+)
 btn_impostazioni.grid(row=0, column=1, padx=5)
 
 frame_controlli = ctk.CTkFrame(app, fg_color="transparent")
 frame_controlli.pack(pady=10)
 
-btn_avvia = ctk.CTkButton(frame_controlli, text="Avvia", width=100, fg_color="green", hover_color="darkgreen",
-                          command=avvia_organizer)
+btn_avvia = ctk.CTkButton(
+    frame_controlli, text="Avvia", width=100,
+    fg_color="green", hover_color="darkgreen",
+    command=avvia_organizer
+)
 btn_avvia.grid(row=0, column=0, padx=5)
 
-btn_ferma = ctk.CTkButton(frame_controlli, text="Ferma", width=100, fg_color="red", hover_color="darkred",
-                          state="disabled", command=ferma_organizer)
+btn_ferma = ctk.CTkButton(
+    frame_controlli, text="Ferma", width=100,
+    fg_color="red", hover_color="darkred",
+    state="disabled", command=ferma_organizer
+)
 btn_ferma.grid(row=0, column=1, padx=5)
 
-btn_riavvia = ctk.CTkButton(frame_controlli, text="Riavvia", width=100, fg_color="#b8860b", hover_color="#8b6508",
-                            state="disabled", command=riavvia_organizer)
+btn_riavvia = ctk.CTkButton(
+    frame_controlli, text="Riavvia", width=100,
+    fg_color="#b8860b", hover_color="#8b6508",
+    state="disabled", command=riavvia_organizer
+)
 btn_riavvia.grid(row=0, column=2, padx=5)
 
 lbl_contatore = ctk.CTkLabel(app, text="File spostati: 0", font=("Helvetica", 12, "bold"), text_color="#aaaaaa")
 lbl_contatore.pack(pady=(5, 5))
 
-box_log = ctk.CTkTextbox(app, width=460, height=130, fg_color="#1e1e1e", text_color="#00ff00", font=("Consolas", 12))
+box_log = ctk.CTkTextbox(app, width=460, height=130, fg_color="#1e1e1e", text_color="#00ff00",
+                         font=("Consolas", 12))
 box_log.pack(pady=5)
 box_log.insert("0.0", "--- LOG DI SISTEMA ---\n")
 box_log.configure(state="disabled")

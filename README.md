@@ -23,12 +23,13 @@
 
 ---
 
-##  Struttura del Progetto
+## Struttura del Progetto
+
 ```
 auto-file-organizer/
 ├── gui.py           # Entry point dell'applicazione con interfaccia grafica
-├── organizer.py     # Logica di monitoraggio e spostamento file (usabile anche standalone)
-├── config.json      # Regole di organizzazione (cartelle → estensioni)
+├── organizer.py     # Logica di monitoraggio e spostamento file (usabile anche standalone da CLI)
+├── config.json      # Regole di organizzazione (cartelle → estensioni), letto da entrambi i moduli
 ├── settings.json    # Preferenze utente (generato automaticamente, escluso da git)
 ├── requirements.txt # Dipendenze Python
 └── .gitignore       # Esclude settings.json e percorsi locali
@@ -39,45 +40,52 @@ auto-file-organizer/
 ## Come Funziona
 
 ### Architettura
+
 ```
 gui.py  ──────────────────────────────────────────────────────────────────────────────────────┐
-│                                                                                              │
-│  CTk UI Loop (main thread)                                                                   │
-│  ├── Switch: Notifiche / Tray / Avvio Windows                                                │
-│  ├── Badge Editor  ──► legge/scrive config.json                                              │
+│                                                                                             │
+│  CTk UI Loop (main thread)                                                                  │
+│  ├── Switch: Notifiche / Tray / Avvio Windows                                               │
+│  ├── Badge Editor  ──► legge/scrive config.json                                             │
 │  └── Bottoni Avvia/Ferma/Riavvia  ──► controlla Observer                                    │
-│                                                                                              │
-│  watchdog.Observer (thread secondario)                                                        │
-│  └── GestoreDownload (FileSystemEventHandler)  ──► on_modified()                             │
-│       ├── Filtra estensioni temporanee (.crdownload, .tmp, .part)                             │
-│       ├── Cerca cartella di destinazione in config.json                                       │
-│       └── sposta_file()  ──► anti-duplicati + shutil.move()                                  │
-│                                                                                               │
-│  pystray.Icon (thread daemon)  ─── attivo solo quando la finestra è nascosta                  │
-└───────────────────────────────────────────────────────────────────────────────────────────────┘
+│                                                                                             │
+│  watchdog.Observer (thread secondario)                                                      │
+│  └── GestoreDownload (FileSystemEventHandler)  ──► on_modified()                            │
+│       ├── Filtra estensioni temporanee (.crdownload, .tmp, .part, .download, .!ut)          │
+│       ├── Attende stabilità del file (polling su dimensione)                                │
+│       ├── Cerca cartella di destinazione in config.json                                     │
+│       └── sposta_file()  ──► anti-duplicati + shutil.move()                                 │
+│                                                                                             │
+│  pystray.Icon (thread daemon)  ─── attivo solo quando la finestra è nascosta                │
+└─────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Flusso di uno spostamento
 
 1. `watchdog` intercetta un evento `on_modified` sulla cartella monitorata.
-2. Vengono filtrati i file temporanei (`.crdownload`, `.tmp`, `.part`) e quelli senza estensione.
-3. L'estensione del file viene cercata nelle regole caricate da `config.json`.
-4. Se trovata, viene creata la sottocartella di destinazione (se non esiste).
-5. Loop anti-duplicati: se il file esiste già, aggiunge `_1`, `_2`, ecc.
-6. `shutil.move()` sposta il file; un `time.sleep(1)` garantisce che il file sia stato scritto completamente.
-7. Il log visivo e le notifiche desktop vengono aggiornati tramite `log_callback`.
+2. Vengono filtrati i file temporanei (`.crdownload`, `.tmp`, `.part`, `.download`, `.!ut`) e quelli senza estensione.
+3. Il programma attende che la dimensione del file smetta di crescere (polling) prima di procedere, evitando di spostare file ancora in scrittura.
+4. L'estensione del file viene cercata nelle regole caricate da `config.json`.
+5. Se trovata, viene creata la sottocartella di destinazione (se non esiste).
+6. Loop anti-duplicati: se il file esiste già, aggiunge `_1`, `_2`, ecc.
+7. `shutil.move()` sposta il file.
+8. Il log visivo e le notifiche desktop vengono aggiornati nel main thread tramite `log_callback`.
 
 ---
 
 ## Formato di `config.json`
+
+Questo è il file di configurazione reale incluso nel repository:
+
 ```json
 {
-    "Immagini": [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"],
-    "Documenti": [".pdf", ".docx", ".xlsx", ".pptx", ".txt"],
-    "Video":     [".mp4", ".mkv", ".avi", ".mov"],
-    "Audio":     [".mp3", ".wav", ".flac", ".aac"],
-    "Archivi":   [".zip", ".rar", ".7z", ".tar", ".gz"],
-    "Programmi": [".exe", ".msi", ".dmg", ".deb"]
+    "Immagini":     [".jpg", ".png", ".jpeg", ".gif", ".svg", ".webp"],
+    "Documenti":    [".pdf", ".docx", ".txt", ".xlsx", ".pptx", ".csv"],
+    "Archivi":      [".zip", ".rar", ".7z", ".tar", ".gz"],
+    "Installatori": [".exe", ".msi", ".dmg", ".iso"],
+    "Video":        [".mp4", ".mov", ".avi", ".mkv", ".wmv"],
+    "Musica":       [".mp3", ".wav", ".flac", ".ogg", ".m4a"],
+    "Codice":       [".py", ".html", ".css", ".js", ".cpp", ".json", ".c", ".java"]
 }
 ```
 
@@ -87,36 +95,45 @@ Puoi modificarlo direttamente o usare l'**Editor Regole a Badge** nell'interfacc
 
 ## Compatibilità OS
 
-| Feature                  | Windows | macOS | Linux |
-|--------------------------|:-------:|:-----:|:-----:|
-| Monitoraggio file        | ✅      | ✅    | ✅    |
-| GUI dark-mode            | ✅      | ✅    | ✅    |
-| Notifiche desktop        | ✅      | ✅    | ✅    |
-| System Tray              | ✅      | ❌ *  | ✅ ** |
-| Avvio automatico         | ✅      | ❌    | ❌    |
+| Feature             | Windows | macOS | Linux       |
+|---------------------|:-------:|:-----:|:-----------:|
+| Monitoraggio file   | ✅      | ✅    | ✅          |
+| GUI dark-mode       | ✅      | ✅    | ✅          |
+| Notifiche desktop   | ✅      | ✅    | ✅          |
+| System Tray         | ✅      | ❌ *  | ✅ **       |
+| Avvio automatico    | ✅      | ❌    | ❌          |
 
-> \* Disabilitata su macOS: le interazioni UI da thread secondari causano crash.  
-> \*\* Dipende dal Desktop Environment (GNOME, KDE, ecc.).
+> \* Disabilitata su macOS: le interazioni UI da thread secondari causano crash.
+>
+> \*\* Dipende dal Desktop Environment. Su **GNOME** è richiesta l'estensione [`AppIndicator`](https://extensions.gnome.org/extension/615/appindicator-support/); su **KDE** e altri DE funziona nativamente.
 
 ---
 
 ## Installazione (Sorgente)
 
 **Prerequisiti:** Python 3.8+
+
 ```bash
 # 1. Clona il repository
 git clone https://github.com/nicoalt21/auto-file-organizer.git
 cd auto-file-organizer
 
-# 2. Installa le dipendenze
+# 2. (Consigliato) Crea un ambiente virtuale
+python -m venv venv
+source venv/bin/activate      # Linux/macOS
+venv\Scripts\activate         # Windows
+
+# 3. Installa le dipendenze
 pip install -r requirements.txt
 
-# 3. Avvia l'applicazione
+# 4. Avvia l'applicazione
 python gui.py
 
 # Oppure, modalità solo CLI (nessuna GUI)
 python organizer.py
 ```
+
+> **Nota per Linux (Debian 12+ / Ubuntu 24+):** Se non usi un virtual environment, `pip` potrebbe rifiutarsi di installare pacchetti di sistema. In quel caso aggiungi il flag `--break-system-packages` oppure usa sempre il venv.
 
 ### Dipendenze (`requirements.txt`)
 
